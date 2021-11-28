@@ -1,0 +1,43 @@
+kubectl apply -k "github.com/kubernetes-sigs/aws-efs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.0"
+
+
+# kubectl kustomize "github.com/kubernetes-sigs/aws-efs-csi-driver/deploy/kubernetes/overlays/stable/ecr?ref=release-1.3" > driver.yaml
+
+
+cat > efs-pvc.yaml << EOF
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: server-efs-sc
+provisioner: efs.csi.aws.com
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: server-efs-pvc
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: server-efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-01cb676a65f1f67be  # Replace
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: server-efs-storage-claim
+  namespace: server
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: server-efs-sc
+  resources:
+    requests:
+      storage: 5Gi
+EOF
